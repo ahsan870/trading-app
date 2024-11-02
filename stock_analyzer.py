@@ -35,9 +35,37 @@ st.markdown("""
 
 def get_stock_data(ticker, period='2y'):
     """Fetch stock data using yfinance"""
-    stock = yf.Ticker(ticker)
-    df = stock.history(period=period)
-    return stock, df
+    try:
+        stock = yf.Ticker(ticker)
+        
+        # For intraday periods, check market hours
+        if period in ['5m', '10m', '15m', '30m', '1h']:
+            current_time = datetime.now().time()
+            market_open = datetime.strptime('09:30', '%H:%M').time()
+            market_close = datetime.strptime('16:00', '%H:%M').time()
+            
+            # If outside market hours, default to daily data
+            if not (market_open <= current_time <= market_close):
+                df = stock.history(period='1d', interval='1d')
+                return stock, df
+        
+        # Normal data fetch with appropriate interval
+        if period in ['5m', '10m', '15m']:
+            interval = '1m'
+        elif period in ['30m']:
+            interval = '2m'
+        elif period in ['1h']:
+            interval = '5m'
+        else:
+            interval = '1d'
+            
+        df = stock.history(period=period, interval=interval)
+        return stock, df
+        
+    except Exception as e:
+        st.info("Unable to fetch intraday data. Showing daily data instead.")
+        df = stock.history(period='1d', interval='1d')
+        return stock, df
 
 def calculate_technical_indicators(df):
     """Calculate technical indicators"""
@@ -123,10 +151,19 @@ def main():
         # Move period selector to sidebar
         period = st.selectbox(
             "Select Time Period:",
-            ['1mo', '3mo', '6mo', '1y', '2y', '5y'],
-            index=4,
+            ['5m', '10m', '15m', '30m', '1h', '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y'],
+            index=11,  # Default to 2y
             help="Choose the historical data timeframe"
         )
+        
+        # Add market hours warning for intraday selections
+        if period in ['5m', '10m', '15m', '30m', '1h']:
+            current_time = datetime.now().time()
+            market_open = datetime.strptime('09:30', '%H:%M').time()
+            market_close = datetime.strptime('16:00', '%H:%M').time()
+            
+            if not (market_open <= current_time <= market_close):
+                st.info("📊 Market hours: 9:30 AM - 4:00 PM EST. Historical daily data is shown outside market hours.")
         
         # Add theme selector
         theme = st.selectbox(
