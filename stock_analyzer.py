@@ -586,48 +586,55 @@ def main():
                     # Get news from yfinance
                     news = stock.news
                     
+                    if not news:  # If no news available
+                        st.info("No recent news available for this stock.")
+                        return
+                    
                     # Calculate sentiment scores
                     sentiment_scores = []
                     for article in news[:10]:  # Analyze last 10 news items
                         analysis = TextBlob(article.get('title', ''))
                         sentiment_scores.append(analysis.sentiment.polarity)
                     
-                    avg_sentiment = sum(sentiment_scores) / len(sentiment_scores)
-                    
-                    # Display sentiment indicator
-                    col1, col2, col3 = st.columns([1,2,1])
-                    with col2:
-                        sentiment_color = 'red' if avg_sentiment < -0.2 else 'green' if avg_sentiment > 0.2 else 'gray'
-                        st.markdown(f"""
-                            ### Overall Market Sentiment
-                            <div style='text-align: center; color: {sentiment_color}; font-size: 24px; padding: 20px;'>
-                                {
-                                    '🐻 Bearish' if avg_sentiment < -0.2 
-                                    else '🐂 Bullish' if avg_sentiment > 0.2 
-                                    else '😐 Neutral'
-                                }
-                            </div>
-                        """, unsafe_allow_html=True)
-                    
-                    # Display recent news with sentiment
-                    st.markdown("### Recent News")
-                    for article in news[:5]:
-                        sentiment = TextBlob(article.get('title', '')).sentiment.polarity
-                        sentiment_icon = "🟢" if sentiment > 0.2 else "🔴" if sentiment < -0.2 else "⚪"
-                        published = datetime.fromtimestamp(article.get('providerPublishTime', 0))
+                    if sentiment_scores:  # Only calculate if we have scores
+                        avg_sentiment = sum(sentiment_scores) / len(sentiment_scores)
                         
-                        st.markdown(f"""
-                            #### {sentiment_icon} {article.get('title', 'No Title')}
-                            *{published.strftime('%Y-%m-%d %H:%M:%S')}*
+                        # Display sentiment indicator
+                        col1, col2, col3 = st.columns([1,2,1])
+                        with col2:
+                            sentiment_color = 'red' if avg_sentiment < -0.2 else 'green' if avg_sentiment > 0.2 else 'gray'
+                            st.markdown(f"""
+                                ### Overall Market Sentiment
+                                <div style='text-align: center; color: {sentiment_color}; font-size: 24px; padding: 20px;'>
+                                    {
+                                        '🐻 Bearish' if avg_sentiment < -0.2 
+                                        else '🐂 Bullish' if avg_sentiment > 0.2 
+                                        else '😐 Neutral'
+                                    }
+                                </div>
+                            """, unsafe_allow_html=True)
+                        
+                        # Display recent news with sentiment
+                        st.markdown("### Recent News")
+                        for article in news[:5]:
+                            sentiment = TextBlob(article.get('title', '')).sentiment.polarity
+                            sentiment_icon = "🟢" if sentiment > 0.2 else "🔴" if sentiment < -0.2 else "⚪"
+                            published = datetime.fromtimestamp(article.get('providerPublishTime', 0))
                             
-                            {article.get('summary', 'No summary available.')}
-                            
-                            [Read More]({article.get('link', '#')})
-                            ---
-                        """)
+                            st.markdown(f"""
+                                #### {sentiment_icon} {article.get('title', 'No Title')}
+                                *{published.strftime('%Y-%m-%d %H:%M:%S')}*
+                                
+                                {article.get('summary', 'No summary available.')}
+                                
+                                [Read More]({article.get('link', '#')})
+                                ---
+                            """)
+                    else:
+                        st.info("Unable to analyze sentiment due to insufficient news data.")
                         
                 except Exception as e:
-                    st.error(f"Error loading news and sentiment: {str(e)}")
+                    st.info("No news data available at the moment. Try again later.")
 
             with tab7:
                 st.subheader("Smart Investment Analysis")
