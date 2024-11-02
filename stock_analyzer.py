@@ -44,28 +44,37 @@ def get_stock_data(ticker, period='2y'):
             market_open = datetime.strptime('09:30', '%H:%M').time()
             market_close = datetime.strptime('16:00', '%H:%M').time()
             
-            # If outside market hours, default to daily data
+            # If outside market hours, show message and return daily data
             if not (market_open <= current_time <= market_close):
-                df = stock.history(period='1d', interval='1d')
+                st.info("""
+                🕒 Market is currently closed. 
+                
+                Market Hours (EST):
+                - Monday to Friday
+                - 9:30 AM to 4:00 PM
+                
+                Showing daily data instead of intraday data.
+                """)
+                # Get daily data instead
+                df = stock.history(period='5d', interval='1d')
+                if df.empty:
+                    st.warning("No recent data available for this stock.")
+                    return None, None
                 return stock, df
         
-        # Normal data fetch with appropriate interval
-        if period in ['5m', '10m', '15m']:
-            interval = '1m'
-        elif period in ['30m']:
-            interval = '2m'
-        elif period in ['1h']:
-            interval = '5m'
-        else:
-            interval = '1d'
+        # Normal data fetch
+        df = stock.history(period=period)
+        
+        # Check if data is empty
+        if df.empty:
+            st.warning(f"No data available for {ticker} in the selected time period.")
+            return None, None
             
-        df = stock.history(period=period, interval=interval)
         return stock, df
         
     except Exception as e:
-        st.info("Unable to fetch intraday data. Showing daily data instead.")
-        df = stock.history(period='1d', interval='1d')
-        return stock, df
+        st.info("Unable to fetch data. Please try again with a different time period.")
+        return None, None
 
 def calculate_technical_indicators(df):
     """Calculate technical indicators"""
