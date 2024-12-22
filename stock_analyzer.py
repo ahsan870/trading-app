@@ -91,7 +91,7 @@ def calculate_technical_indicators(df):
 
     return df
 
-def predict_stock_price(df, prediction_days=90):
+def predict_stock_price(df, prediction_days=365):
     """Predict future stock prices using simple moving average"""
     try:
         # Calculate the average daily price change
@@ -372,12 +372,12 @@ def main():
                 # Simplified Prediction section
                 st.subheader("Price Prediction")
                 
-                # Fixed prediction for 2 years (730 days)
-                prediction_days = 730
+                # Fixed prediction for 1 year (365 days)
+                prediction_days = 365
                 
                 try:
                     with st.spinner('Generating long-term prediction...'):
-                        forecast = predict_stock_price(df, prediction_days)
+                        forecast = predict_stock_price(df)
                         
                         if forecast is not None:
                             # Create prediction chart
@@ -412,7 +412,7 @@ def main():
                             
                             # Update layout
                             fig_pred.update_layout(
-                                title=f'{ticker} 2-Year Price Prediction',
+                                title=f'{ticker} 1-Year Price Prediction',
                                 yaxis_title='Price (USD)',
                                 xaxis_title='Date',
                                 height=600,
